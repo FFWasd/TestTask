@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Мимимиметр</title>
+        <style>
+            body { font-family: sans-serif; text-align: center; margin-top: 40px; }
+            .cards { display: flex; justify-content: center; gap: 30px; }
+            .cat-btn {
+            cursor: pointer; border: 2px solid #ccc; border-radius: 12px;
+            padding: 15px; background: white; transition: 0.2s;
+            }
+            .cat-btn:hover { border-color: #ff6b6b; transform: scale(1.03); }
+            .cat-btn img { width: 250px; height: 250px; object-fit: cover; border-radius: 8px; display: block; }
+            .cat-btn span { display: block; margin-top: 12px; font-size: 20px; font-weight: bold; }
+            .result-item { margin: 15px auto; display: flex; align-items: center; justify-content: center; gap: 15px; }
+            .result-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; }
+        </style>
+    </head>
+    <body>
+        <h1 id="title">Кто милее?</h1>
+        <div id="voting-area" class="cards">
+            <button class="cat-btn" onclick="vote(0)">
+                <img id="img0" src="/images/cat1.jpg" alt="Кот 1">
+                <span id="name0">Барсик</span>
+            </button>
+
+            <button class="cat-btn" onclick="vote(1)">
+            <img id="img1" src="/images/cat2.jpg" alt="Кот 2">
+            <span id="name1">Мурзик</span>
+            </button>
+        </div>
+
+        <div id="result-area" style="display: none;"></div>
+
+        <script>
+            window.onload = loadNextPair;
+
+            async function loadNextPair() {
+                const response = await fetch('/pair');
+                const pair = await response.json();
+
+                if (pair.length === 0){
+                    loadResults();
+                    return;
+                }
+
+                document.getElementById('img0').src = pair[0].imageUrl;
+                document.getElementById('name0').innerText = pair[0].name;
+
+                document.getElementById('img1').src = pair[1].imageUrl;
+                document.getElementById('name1').innerText = pair[1].name;
+            }
+
+
+            async function vote(choiceIndex) {
+                await fetch('/vote?choice=' + choiceIndex, {method: 'POST'});
+                loadNextPair();
+            }
+
+            async function loadResults() {
+                const response = await fetch('/cats');
+                const cats = await response.json();
+
+                document.getElementById('voting-area').style.display = 'none';
+                document.getElementById('title').innerText = 'Итоговый рейтинг';
+
+                const resultDiv = document.getElementById('result-area');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = cats.map((cat,index) => `
+                    <div class = "result-item">
+                        <h2>${index + 1})</h2>
+                        <img src="${cat.imageUrl}" alt="${cat.name}">
+                        <span>${cat.name} (очков: ${cat.rate})</span>
+                    </div>
+                `).join('');
+            }
+        </script>
+    </body>
+</html>
